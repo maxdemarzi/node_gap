@@ -9,7 +9,7 @@ import org.neo4j.graphdb.traversal.BranchState;
 import java.util.Collections;
 
 public class ToExpander implements PathExpander {
-    private boolean search;
+    public boolean search;
 
     public ToExpander() {
         search = true;

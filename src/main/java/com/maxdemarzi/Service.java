@@ -7,7 +7,6 @@ import org.neo4j.graphdb.*;
 import org.neo4j.graphdb.traversal.Evaluators;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Uniqueness;
-import org.neo4j.tooling.GlobalGraphOperations;
 import org.roaringbitmap.RoaringBitmap;
 
 import javax.ws.rs.GET;
@@ -45,7 +44,7 @@ public class Service {
         }};
 
         try (Transaction tx = db.beginTx()) {
-            for (Node n : GlobalGraphOperations.at(db).getAllNodes()) {
+            for (Node n : db.getAllNodes()) {
                 n.getPropertyKeys();
                 for (Relationship relationship : n.getRelationships()) {
                     relationship.getPropertyKeys();
@@ -53,7 +52,7 @@ public class Service {
                 }
             }
 
-            for (Relationship relationship : GlobalGraphOperations.at(db).getAllRelationships()) {
+            for (Relationship relationship : db.getAllRelationships()) {
                 relationship.getPropertyKeys();
                 relationship.getNodes();
             }
@@ -78,7 +77,7 @@ public class Service {
                 RoaringBitmap IncludedPoints = new RoaringBitmap();
 
                 try (Transaction tx = db.beginTx()) {
-                    for (Node n : GlobalGraphOperations.at(db).getAllNodes()) {
+                    for (Node n : db.getAllNodes()) {
                         int node_id = ((Number) n.getId()).intValue();
                         if (n.hasLabel(Labels.road)) {
                             Roads.add(node_id);
@@ -92,24 +91,28 @@ public class Service {
                 }
 
                 try (Transaction tx = db.beginTx()) {
+
+                    FromExpander fromExpander = new FromExpander();
+                    ToExpander toExpander = new ToExpander();
+
+                    TraversalDescription fromRoad = db.traversalDescription()
+                            .breadthFirst()
+                            .expand(fromExpander)
+                            .uniqueness(Uniqueness.NODE_GLOBAL)
+                            .evaluator(Evaluators.includeWhereLastRelationshipTypeIs(RelationshipTypes.roadnamed));
+
+                    TraversalDescription toRoad = db.traversalDescription()
+                            .breadthFirst()
+                            .expand(toExpander)
+                            .uniqueness(Uniqueness.NODE_GLOBAL)
+                            .evaluator(Evaluators.includeWhereLastRelationshipTypeIs(RelationshipTypes.roadnamed));
+
                     UnAttachedPoints.forEach((ThrowingConsumer) value -> {
 
                         // If we didn't already find you via a different way
                         if (!IncludedPoints.contains(value)) {
-
-                            TraversalDescription fromRoad = db.traversalDescription()
-                                    .breadthFirst()
-                                    .expand(new FromExpander())
-                                    .uniqueness(Uniqueness.NODE_GLOBAL)
-                                    .evaluator(Evaluators.includeWhereLastRelationshipTypeIs(RelationshipTypes.roadnamed));
-
-                            TraversalDescription toRoad = db.traversalDescription()
-                                    .breadthFirst()
-                                    .expand(new ToExpander())
-                                    .uniqueness(Uniqueness.NODE_GLOBAL)
-                                    .evaluator(Evaluators.includeWhereLastRelationshipTypeIs(RelationshipTypes.roadnamed));
-
-                            HashMap<String, Object> result = new HashMap<String, Object>();
+                            fromExpander.search = true;
+                            toExpander.search = true;
 
                             jg.writeStartObject();
 

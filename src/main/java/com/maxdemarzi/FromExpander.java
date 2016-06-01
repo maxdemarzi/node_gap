@@ -10,7 +10,7 @@ import java.util.Collections;
 
 public class FromExpander implements PathExpander {
 
-    private boolean search;
+    public boolean search;
 
     public FromExpander() {
         search = true;

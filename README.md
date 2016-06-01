@@ -14,9 +14,14 @@ Instructions
 
 2. Copy target/node_gap-1.0-SNAPSHOT.jar to the plugins/ directory of your Neo4j server.
 
-3. Configure Neo4j by adding a line to conf/neo4j-server.properties:
+3a. Configure Neo4j by adding a line to conf/neo4j-server.properties on versions < 3.0:
 
         org.neo4j.server.thirdparty_jaxrs_classes=com.maxdemarzi=/v1
+
+3b. Configure Neo4j by adding a line to conf/neo4j.conf on version >= 3.0:
+        
+        dbms.unmanaged_extension_classes=com.maxdemarzi=/v1
+
 
 4. Download and copy additional jar to the plugins/ directory of your Neo4j server.
 
